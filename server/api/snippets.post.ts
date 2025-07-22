@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { user_id, title, content, language, description, tagIds } = body
 
-  if (!user_id || !title || !content || !language) {
+  if (!user_id || !title || !content) {
     return { success: false, message: '请填写完整信息' }
   }
 
