@@ -26,7 +26,7 @@ const onRegister = async () => {
   error.value = ''
   success.value = ''
   try {
-    const res = await $fetch('/api/register', {
+    const res = await $fetch('/api/user/register', {
       method: 'POST',
       body: { username: username.value, email: email.value, password: password.value }
     }) as { success: boolean; message?: string }

@@ -22,7 +22,7 @@ const router = useRouter()
 
 const onLogin = async () => {
   error.value = ''
-  const res = await $fetch('/api/login', {
+  const res = await $fetch('/api/user/login', {
     method: 'POST',
     body: { username: username.value, password: password.value }
   }) as { success: boolean; token?: string; user?: { id: number; username: string; email: string }; message?: string }
@@ -31,7 +31,7 @@ const onLogin = async () => {
     if (res.user) {
       localStorage.setItem('user', JSON.stringify(res.user))
     }
-    router.push('/snippets')
+    router.push('/')
   } else {
     error.value = res.message || '登录失败'
   }
