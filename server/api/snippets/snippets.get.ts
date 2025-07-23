@@ -16,10 +16,7 @@ export default defineEventHandler(async (event) => {
       sql += ' AND (title LIKE ? OR content LIKE ?)'
       params.push(`%${search}%`, `%${search}%`)
     }
-    if (language) {
-      sql += ' AND language = ?'
-      params.push(language)
-    }
+    
     sql += ' ORDER BY created_at DESC'
 
     const [rows] = await pool.execute(sql, params)

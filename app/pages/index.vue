@@ -1,12 +1,18 @@
 <template>
-  <div class="snippets-page">
-    <div class="user-bar">
-      <span v-if="user.username">当前用户：{{ user.username }}（{{ user.email }}）</span>
-      <button class="logout-btn" @click="logout">退出登录</button>
+  <div class="snippets-header">
+    <div class="snippets-header-center">
+      <h2>我的代码片段</h2>
+      <div class="search-bar">
+        <button @click="showAdd = true" class="add-btn">新建片段</button>
+        <input id="search" class="search-input" v-model="search" placeholder="输入想要搜索的标题或内容..." @input="() => fetchSnippets(1)" />
+        <div class="user-bar">
+          <span v-if="user.username">{{ user.username }}</span>
+          <button class="logout-btn" @click="logout">退出</button>
+        </div>
+      </div>
     </div>
-    <h2>我的代码片段</h2>
-    <button @click="showAdd = true">新建片段</button>
-    <input v-model="search" placeholder="搜索片段..." @input="fetchSnippets" />
+  </div>
+  <div class="snippets-page">
     <div v-for="s in snippets" :key="s.id" class="snippet-item">
       <div class="snippet-title">{{ s.title }}</div>
       <MdPreview :id="id" :modelValue="s.content" />
@@ -15,14 +21,21 @@
     </div>
     <div v-if="showAdd" class="modal-overlay">
       <div class="add-modal">
-        <h3>新建代码片段</h3>
+        <h3>{{ currentSnippet.id ? '修改代码片段' : '新建代码片段' }}</h3>
         <input v-model="addForm.title" placeholder="标题" maxlength="60" />
         <MdEditor v-model="addForm.content" placeholder="代码内容" />
-        <button @click="currentSnippet.id ? saveEdit() : addSnippet()">
-          {{ currentSnippet.id ? '保存修改' : '添加' }}
-        </button>
-        <button @click="close">取消</button>
+        <div class="btn-group">
+          <button class="edit-btn" @click="currentSnippet.id ? saveEdit() : addSnippet()">
+            {{ currentSnippet.id ? '保存修改' : '添加' }}
+          </button>
+          <button class="cancel-btn" @click="close">取消</button>
+        </div>
       </div>
+    </div>
+    <div v-if="totalPages > 1" class="pagination">
+      <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
+      <span>第 {{ currentPage }} 页 / 共 {{ totalPages }} 页</span>
+      <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
     </div>
   </div>
 </template>
@@ -42,16 +55,31 @@ const user = ref<{ username?: string, email?: string }>({})
 const snippets = ref<any[]>([])
 const search = ref('')
 const showAdd = ref(false)
-const addForm = ref({ title: '', language: '', content: '', description: '' })
+const addForm = ref({ title: '', content: '', description: '' })
+const currentPage = ref(1)
+const totalPages = ref(1)
 
-const fetchSnippets = async () => {
-  const userObj = JSON.parse(localStorage.getItem('user') || '{}')
-  if (!userObj.id) return
-  const res = await $fetch('/api/snippets/snippets', {
-    params: { user_id: userObj.id, search: search.value }
-  }) as any
-  if (res.success) snippets.value = res.data
-}
+const fetchSnippets = async (page = 1) => {
+  currentPage.value = page;
+  const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!userObj.id) return;
+
+  const res = await $fetch('/api/snippets/pagination', {
+    method: 'POST',
+    body: { user_id: userObj.id, page, pageSize: 10, search: search.value }
+  }) as any;
+
+  if (res.success) {
+    snippets.value = res.data;
+    totalPages.value = Math.ceil(res.total / 10);
+  }
+};
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  fetchSnippets(page);
+};
 
 const addSnippet = async () => {
   const userObj = JSON.parse(localStorage.getItem('user') || '{}')
@@ -125,23 +153,52 @@ const saveEdit = async () => {
 
 const close = () => {
   showAdd.value = false
-  addForm.value = { title: '', language: '', content: '', description: '' }
+  addForm.value = { title: '', content: '', description: '' }
   currentSnippet.value = { id: '',title: '', content: '' }
 }
 </script>
 
 <style scoped>
-.snippets-page { max-width: 800px; margin: 40px auto; }
-.user-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.logout-btn { background: #e74c3c; color: #fff; border: none; border-radius: 4px; padding: 6px 16px; cursor: pointer; }
-.logout-btn:hover { background: #c0392b; }
-.snippet-item { border: 1px solid #eee; border-radius: 6px; margin: 16px 0; padding: 12px; background: #fafbfc; }
+h2{margin: 10px 0px;}
+input, textarea { display: block; width: 100%; margin-bottom: 12px; padding: 8px; border-radius: 4px; border: 1px solid #ddd; }
+button { margin-right: 8px; }
+.snippets-page { max-width: 800px; margin: 80px auto; }
+.snippet-item { width: 100%;max-width: 776px; border: 1px solid #eee; border-radius: 6px; margin: 16px 0; padding: 12px; background: #fafbfc; }
 .snippet-title { font-weight: bold; font-size: 18px; }
 .snippet-lang { color: #18c37d; font-size: 14px; margin-bottom: 6px; }
 .snippet-content { background: #f4f4f4; padding: 8px; border-radius: 4px; }
-.add-modal { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 24px; margin-top: 24px; }
-input, textarea { display: block; width: 100%; margin-bottom: 12px; padding: 8px; border-radius: 4px; border: 1px solid #ddd; }
-button { margin-right: 8px; }
+.snippets-header{
+  position: fixed;
+  padding: 5px 0px;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  z-index: 10001;
+}
+.snippets-header-center{
+  display: flex;
+  justify-content: space-between; 
+  margin: 0 auto;
+  width: 950px;
+}
+.user-bar { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+.search-bar{
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 80%;
+}
+.search-input{
+  padding: 8px;
+  max-width: 406px;
+  margin: 0px 10px 0px 0px;
+}
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -152,7 +209,7 @@ button { margin-right: 8px; }
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 10000;
+  z-index: 10002;
 }
 
 .add-modal {
@@ -161,6 +218,64 @@ button { margin-right: 8px; }
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 800px;
+  max-width: 752px;
+  margin-top: 24px;
+}
+.btn-group{
+  margin-top: 10px;
+}
+
+.logout-btn, .add-btn, .edit-btn,.cancel-btn, .delete-btn, .pagination button {
+  background: #409eff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  margin: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.cancel-btn{
+  background: #fff;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.add-btn{
+  background-color: rgb(240, 249, 235);
+  margin: 0px 10px 0px 0px;
+  font-weight: bold;
+  color: #67c23a;
+}
+.add-btn:hover{
+  background: rgb(209, 237, 196);
+}
+
+.edit-btn:hover, .delete-btn:hover, .pagination button:hover {
+  background: rgb(51, 126, 204);
+}
+
+.delete-btn,.logout-btn {
+  background: #f56c6c;
+}
+
+.delete-btn:hover,.logout-btn:hover {
+  background: rgb(196, 86, 86);
+}
+
+.logout-btn{
+  margin-right: 0px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.pagination button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
 }
 </style>
