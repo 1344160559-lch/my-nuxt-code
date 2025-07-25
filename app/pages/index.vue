@@ -61,17 +61,32 @@ const totalPages = ref(1)
 
 const fetchSnippets = async (page = 1) => {
   currentPage.value = page;
-  const userObj = JSON.parse(localStorage.getItem('user') || '{}');
-  if (!userObj.id) return;
+  const token = localStorage.getItem('token');
+  if (!token) {
+    router.push('/login');
+    return;
+  }
 
-  const res = await $fetch('/api/snippets/pagination', {
-    method: 'POST',
-    body: { user_id: userObj.id, page, pageSize: 10, search: search.value }
-  }) as any;
+  try {
+    const res = await $fetch('/api/snippets/pagination', {
+      method: 'POST',
+      body: { page, pageSize: 10, search: search.value },
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }) as any;
 
-  if (res.success) {
-    snippets.value = res.data;
-    totalPages.value = Math.ceil(res.total / 10);
+    if (res.success) {
+      snippets.value = res.data;
+      totalPages.value = Math.ceil(res.total / 10);
+    } else if (res.code === 'TOKEN_EXPIRED') {
+      tokenExpired();
+    }
+  } catch (error: any) {
+    console.error('获取片段失败:', error);
+    if (error.response?.status === 401) {
+      tokenExpired();
+    }
   }
 };
 
@@ -82,14 +97,32 @@ const goToPage = (page: number) => {
 };
 
 const addSnippet = async () => {
-  const userObj = JSON.parse(localStorage.getItem('user') || '{}')
-  const res = await $fetch('/api/snippets/snippets', {
-    method: 'POST',
-    body: { ...addForm.value, user_id: userObj.id }
-  }) as any
-  if (res.success) {
-    fetchSnippets()
-    close()
+  const token = localStorage.getItem('token')
+  if (!token) {
+    router.push('/login');
+    return;
+  }
+
+  try {
+    const res = await $fetch('/api/snippets/snippets', {
+      method: 'POST',
+      body: { ...addForm.value },
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }) as any
+    
+    if (res.success) {
+      fetchSnippets()
+      close()
+    } else if (res.code === 'TOKEN_EXPIRED') {
+      tokenExpired();
+    }
+  } catch (error:any) {
+    console.error('添加片段失败:', error);
+    if (error.response?.status === 401) {
+      tokenExpired();
+    }
   }
 }
 
@@ -107,15 +140,30 @@ onMounted(() => {
 const deleteSnippet = async (id: number) => {
   if (confirm('确定要删除这个代码片段吗？')) {
     try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      
       const response = await $fetch('/api/snippets/snippets', {
         method: 'DELETE',
-        body: { id }
+        body: { id },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       }) as any
+      
       if (response.body.success) {
         fetchSnippets()
+      } else if (response.body.code === 'TOKEN_EXPIRED') {
+        tokenExpired();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('删除失败:', error)
+      if (error.response?.status === 401) {
+        tokenExpired();
+      }
     }
   }
 }
@@ -132,6 +180,12 @@ const saveEdit = async () => {
   if (!currentSnippet.value) return
 
   try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    
     const data = {
       id: currentSnippet.value.id,
       title: addForm.value.title,
@@ -140,15 +194,29 @@ const saveEdit = async () => {
     
     const response = await $fetch('/api/snippets/snippets', {
       method: 'PUT',
-      body: data
+      body: data,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }) as any
+    
     if (response.body.success) {
       fetchSnippets()
       close()
+    } else if (response.body.code === 'TOKEN_EXPIRED') {
+      tokenExpired();
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('更新失败:', error)
+    if (error.response?.status === 401) {
+      tokenExpired();
+    }
   }
+}
+
+const tokenExpired = ()=>{
+  alert('登录已过期，请重新登录');
+  logout();
 }
 
 const close = () => {
@@ -217,8 +285,8 @@ button { margin-right: 8px; }
   padding: 24px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 752px;
+  width: 90%;
+  max-width: 1000px;
   margin-top: 24px;
 }
 .btn-group{

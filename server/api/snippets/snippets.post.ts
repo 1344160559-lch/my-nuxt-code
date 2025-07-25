@@ -1,17 +1,29 @@
 import pool from '../../db'
+import { getUserIdFromToken } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { user_id, title, content, description, tagIds } = body
+  // Get user ID from token
+  const { userId, error } = getUserIdFromToken(event);
+  
+  if (!userId) {
+    return { 
+      success: false, 
+      message: error || 'Authentication required', 
+      code: error === 'Token expired' ? 'TOKEN_EXPIRED' : 'AUTH_REQUIRED' 
+    };
+  }
 
-  if (!user_id || !title || !content) {
+  const body = await readBody(event)
+  const { title, content, description, tagIds } = body
+
+  if (!title || !content) {
     return { success: false, message: '请填写完整信息' }
   }
 
   // 新建片段
   const [result] = await pool.execute(
     'INSERT INTO snippets (user_id, title, content, description) VALUES (?, ?, ?, ?)',
-    [user_id, title, content, description || '']
+    [userId, title, content, description || '']
   )
   const snippetId = (result as any).insertId
 

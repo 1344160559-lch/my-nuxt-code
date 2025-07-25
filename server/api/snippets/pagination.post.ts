@@ -1,15 +1,23 @@
 import pool from '../../db'
+import { getUserIdFromToken } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const { user_id, page = 1, pageSize = 10, search = '' } = await readBody(event);
-
-  if (!user_id) {
-    return { success: false, message: 'User ID is required' };
+  // Get user ID from token
+  const { userId, error } = getUserIdFromToken(event);
+  
+  if (!userId) {
+    return { 
+      success: false, 
+      message: error || 'Authentication required', 
+      code: error === 'Token expired' ? 'TOKEN_EXPIRED' : 'AUTH_REQUIRED' 
+    };
   }
 
+  const { page = 1, pageSize = 10, search = '' } = await readBody(event);
+
   try {
-    // 假设你有一个数据库查询函数，根据 user_id 和分页参数获取数据
-    const { snippets, total } = await getSnippetsByUserId(user_id, page, pageSize, search);
+    // Use the user ID from the token
+    const { snippets, total } = await getSnippetsByUserId(userId, page, pageSize, search);
 
     return { success: true, data: snippets, total };
   } catch (error) {

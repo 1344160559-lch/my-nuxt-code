@@ -1,16 +1,24 @@
 import pool from '../../db'
+import { getUserIdFromToken } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event)
-  const { user_id, search, tag_id, language } = query
-
-  if (!user_id) {
-    return { success: false, message: '缺少 user_id' }
+  // Get user ID from token
+  const { userId, error } = getUserIdFromToken(event);
+  
+  if (!userId) {
+    return { 
+      success: false, 
+      message: error || 'Authentication required', 
+      code: error === 'Token expired' ? 'TOKEN_EXPIRED' : 'AUTH_REQUIRED' 
+    };
   }
+
+  const query = getQuery(event)
+  const { search, tag_id, language } = query
 
   try {
     let sql = 'SELECT * FROM snippets WHERE user_id = ?'
-    const params: any[] = [user_id]
+    const params: any[] = [userId]
 
     if (search) {
       sql += ' AND (title LIKE ? OR content LIKE ?)'
