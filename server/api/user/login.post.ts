@@ -1,6 +1,7 @@
 import pool from '../../db'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { JWT_SECRET } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
   const token = jwt.sign(
     { id: user.id, username: user.username },
-    process.env.JWT_SECRET!,
+    JWT_SECRET,
     { expiresIn: '7d' }
   )
 

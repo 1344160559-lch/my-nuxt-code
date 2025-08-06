@@ -43,8 +43,13 @@ async function getSnippetsByUserId(user_id: number, page: number, pageSize: numb
       sql += ' AND (title LIKE ? OR content LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
     }
-    sql += ` ORDER BY created_at DESC LIMIT ?, ?`;
-    params.push(pageNo, pageSize);
+    
+    // 在 MySQL 中，LIMIT 参数必须是整数，确保 pageNo 和 pageSize 是数字
+    const offset = parseInt(String(pageNo), 10);
+    const limit = parseInt(String(pageSize), 10);
+    
+    // 使用 LIMIT 子句，但确保参数是整数
+    sql += ` ORDER BY created_at DESC LIMIT ${offset}, ${limit}`;
 
     // 使用带有重试功能的执行方法
     const result = await pool.executeWithRetry(sql, params);

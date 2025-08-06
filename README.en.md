@@ -58,7 +58,6 @@ DB_USER=your_db_user
 DB_PASS=your_db_password
 DB_NAME=your_db_name
 DB_PORT=3306
-JWT_SECRET=your_jwt_secret
 ```
 
 ### 4. Create database tables

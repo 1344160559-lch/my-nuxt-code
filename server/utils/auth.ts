@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 // JWT secret key - should match the one used for token generation
-const JWT_SECRET = process.env.JWT_SECRET!;
+export const JWT_SECRET = 'cAyLeMcXtOlPeZoWq';
 
 interface TokenPayload {
   id: number;

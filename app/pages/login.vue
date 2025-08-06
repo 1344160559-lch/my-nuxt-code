@@ -19,6 +19,7 @@
     </form>
     <div class="to-register">{{ t('login.noAccount') }}<NuxtLink to="/register">{{ t('login.goRegister') }}</NuxtLink></div>
   </div>
+  
 </template>
 
 <script setup lang="ts">

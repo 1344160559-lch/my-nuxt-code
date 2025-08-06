@@ -8,9 +8,9 @@ const getEnvVar = (name: string, defaultValue: string = '') => {
 // 创建数据库连接池
 const pool = mysql.createPool({
     host: getEnvVar('DB_HOST', '127.0.0.1'),
-    user: getEnvVar('DB_USER', 'root'),
-    password: getEnvVar('DB_PASS', ''),
-    database: getEnvVar('DB_NAME', 'code_snippets'),
+    user: getEnvVar('DB_USER', 'code_snippets2'),
+    password: getEnvVar('DB_PASS', 'XCCEFBdm7CmcRd65'),
+    database: getEnvVar('DB_NAME', 'code_snippets2'),
     port: Number(getEnvVar('DB_PORT', '3306')),
     waitForConnections: true,
     connectionLimit: 10,

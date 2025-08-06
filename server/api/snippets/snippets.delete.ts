@@ -61,9 +61,6 @@ export default defineEventHandler(async (event) => {
         }
       }
       
-      // 先删除相关的标签关联
-      await pool.executeWithRetry('DELETE FROM snippet_tags WHERE snippet_id = ?', [id]);
-      
       // 删除片段
       const deleteResult = await pool.executeWithRetry('DELETE FROM snippets WHERE id = ?', [id]);
       
