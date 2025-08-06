@@ -27,7 +27,13 @@ export default defineEventHandler(async (event) => {
     
     sql += ' ORDER BY created_at DESC'
 
-    const [rows] = await pool.execute(sql, params)
+    // 使用带有重试功能的数据库连接
+    const result = await pool.executeWithRetry(sql, params, 3)
+    // 确保结果不为undefined
+    if (!result) {
+      return { success: false, message: '查询结果为空' }
+    }
+    const rows = result[0]
     return { success: true, data: rows }
   } catch (e) {
     console.error('snippets.get.ts error:', e)

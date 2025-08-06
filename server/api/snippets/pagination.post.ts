@@ -21,7 +21,12 @@ export default defineEventHandler(async (event) => {
 
     return { success: true, data: snippets, total };
   } catch (error) {
-    return { success: false, message: 'Failed to fetch snippets', error };
+    console.error('分页查询出错:', error);
+    return { 
+      success: false, 
+      message: '获取代码片段失败，请稍后再试',
+      error: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    };
   }
 });
 
@@ -30,6 +35,7 @@ async function getSnippetsByUserId(user_id: number, page: number, pageSize: numb
   const pageNo = (page - 1) * pageSize;
 
   try {
+    // 不使用事务，直接查询
     let sql = 'SELECT * FROM snippets WHERE user_id = ?';
     const params: any[] = [user_id];
 
@@ -40,7 +46,13 @@ async function getSnippetsByUserId(user_id: number, page: number, pageSize: numb
     sql += ` ORDER BY created_at DESC LIMIT ?, ?`;
     params.push(pageNo, pageSize);
 
-    const [rows] = await pool.execute(sql, params);
+    // 使用带有重试功能的执行方法
+    const result = await pool.executeWithRetry(sql, params);
+    // 确保结果不为undefined
+    if (!result) {
+      throw new Error('查询结果为空');
+    }
+    const rows = result[0];
     
     // 获取总数
     let countSql = 'SELECT COUNT(*) as total FROM snippets WHERE user_id = ?';
@@ -51,7 +63,13 @@ async function getSnippetsByUserId(user_id: number, page: number, pageSize: numb
       countParams.push(`%${search}%`, `%${search}%`);
     }
 
-    const [countResult] = await pool.execute(countSql, countParams);
+    // 使用带有重试功能的执行方法
+    const countResultData = await pool.executeWithRetry(countSql, countParams);
+    // 确保结果不为undefined
+    if (!countResultData) {
+      throw new Error('查询总数结果为空');
+    }
+    const countResult = countResultData[0];
     let total = 0;
     if (Array.isArray(countResult) && countResult.length > 0) {
       const row = countResult[0];
@@ -63,6 +81,6 @@ async function getSnippetsByUserId(user_id: number, page: number, pageSize: numb
     return { snippets: rows, total };
   } catch (e) {
     console.error('getSnippetsByUserId error:', e);
-    return { success: false, message: '服务器错误' };
+    throw e; // 向上抛出错误，让调用者处理
   }
 }

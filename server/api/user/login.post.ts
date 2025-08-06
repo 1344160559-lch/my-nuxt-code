@@ -6,10 +6,18 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { username, password } = body  
 
-  const [rows] = await pool.execute(
+  // 使用带有重试功能的执行方法
+  const result = await pool.executeWithRetry(
     'SELECT * FROM users WHERE username = ?',
     [username]
   )
+  
+  // 确保结果不为undefined
+  if (!result) {
+    return { success: false, message: '服务器错误，请稍后再试' }
+  }
+  
+  const [rows] = result
 
   if (!Array.isArray(rows) || rows.length === 0) {
     return { success: false, message: '用户不存在' }

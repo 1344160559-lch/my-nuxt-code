@@ -10,10 +10,17 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查用户名或邮箱是否已存在
-  const [users] = await pool.execute(
+  const result = await pool.executeWithRetry(
     'SELECT id FROM users WHERE username = ? OR email = ?',
     [username, email]
   )
+  
+  // 确保结果不为undefined
+  if (!result) {
+    return { success: false, message: '服务器错误，请稍后再试' }
+  }
+  
+  const [users] = result
   if (Array.isArray(users) && users.length > 0) {
     return { success: false, message: '用户名或邮箱已存在' }
   }
@@ -22,10 +29,15 @@ export default defineEventHandler(async (event) => {
   const password_hash = await bcrypt.hash(password, 10)
 
   // 插入新用户
-  await pool.execute(
+  const insertResult = await pool.executeWithRetry(
     'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
     [username, email, password_hash]
   )
+  
+  // 确保结果不为undefined
+  if (!insertResult) {
+    return { success: false, message: '注册失败，请稍后再试' }
+  }
 
   return { success: true }
 }) 
