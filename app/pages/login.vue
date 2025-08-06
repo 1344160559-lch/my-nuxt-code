@@ -1,35 +1,43 @@
 <template>
   <div class="login-container">
-    <h2>用户登录</h2>
+    <div class="language-switcher">
+      <select v-model="locale">
+        <option value="zh">{{ t('common.chinese') }}</option>
+        <option value="en">{{ t('common.english') }}</option>
+      </select>
+    </div>
+    <h2>{{ t('login.title') }}</h2>
     <form @submit.prevent="onLogin">
       <div class="input-group">
-        <input v-model="username" placeholder="请输入用户名" id="user" required />
+        <input v-model="username" :placeholder="t('login.usernamePlaceholder')" required />
       </div>
       <div class="input-group">
-        <input v-model="password" type="password" placeholder="请输入密码" id="password" required />
+        <input v-model="password" type="password" :placeholder="t('login.passwordPlaceholder')" required />
       </div>
-      <button type="submit">登录</button>
+      <button type="submit">{{ t('login.loginButton') }}</button>
       <div v-if="error" class="error">{{ error }}</div>
     </form>
-    <div class="to-register">没有账号？<NuxtLink to="/register">去注册</NuxtLink></div>
+    <div class="to-register">{{ t('login.noAccount') }}<NuxtLink to="/register">{{ t('login.goRegister') }}</NuxtLink></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const username = ref('')
 const password = ref('')
 const error = ref('')
 const router = useRouter()
+const { t, locale } = useI18n()
 
 const onLogin = async () => {
   error.value = ''
   const res = await $fetch('/api/user/login', {
     method: 'POST',
     body: { username: username.value, password: password.value }
-  }) as { success: boolean; token?: string; user?: { id: number; username: string; email: string }; message?: string }
+  }) as { success: boolean; token?: string; user?: { id: number; username: string; email: string }; message?: string; code?: string }
   if (res.success) {
     localStorage.setItem('token', res.token!)
     if (res.user) {
@@ -37,7 +45,16 @@ const onLogin = async () => {
     }
     router.push('/')
   } else {
-    error.value = res.message || '登录失败'
+    // 根据错误代码返回对应的国际化文本
+    if (res.code === 'USER_NOT_EXIST') {
+      error.value = t('login.userNotExist')
+    } else if (res.code === 'WRONG_PASSWORD') {
+      error.value = t('login.wrongPassword')
+    } else if (res.code === 'SERVER_ERROR') {
+      error.value = t('login.serverError')
+    } else {
+      error.value = t('login.loginFailed')
+    }
   }
 }
 </script>
@@ -50,6 +67,27 @@ const onLogin = async () => {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.language-switcher {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.language-switcher select {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+
+.language-switcher select:focus {
+  border-color: #18c37d;
 }
 
 h2 {

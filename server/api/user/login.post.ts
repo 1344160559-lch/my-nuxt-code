@@ -14,20 +14,32 @@ export default defineEventHandler(async (event) => {
   
   // 确保结果不为undefined
   if (!result) {
-    return { success: false, message: '服务器错误，请稍后再试' }
+    return { 
+      success: false, 
+      message: '服务器错误，请稍后再试',
+      code: 'SERVER_ERROR'
+    }
   }
   
   const [rows] = result
 
   if (!Array.isArray(rows) || rows.length === 0) {
-    return { success: false, message: '用户不存在' }
+    return { 
+      success: false, 
+      message: '用户不存在',
+      code: 'USER_NOT_EXIST'
+    }
   }
   const user = rows[0] as any
 
   const valid = await bcrypt.compare(password, user.password)
   
   if (!valid) {
-    return { success: false, message: '密码错误' }
+    return { 
+      success: false, 
+      message: '密码错误',
+      code: 'WRONG_PASSWORD'
+    }
   }
 
   const token = jwt.sign(
@@ -37,4 +49,4 @@ export default defineEventHandler(async (event) => {
   )
 
   return { success: true, token, user: { id: user.id, username: user.username, email: user.email } }
-}) 
+})

@@ -1,13 +1,19 @@
 <template>
   <div class="snippets-header">
     <div class="snippets-header-center">
-      <h2>我的代码片段</h2>
+      <h2>{{ t('home.title') }}</h2>
       <div class="search-bar">
-        <button @click="showAdd = true" class="add-btn">新建片段</button>
-        <input id="search" class="search-input" v-model="search" placeholder="输入想要搜索的标题或内容..." @input="() => fetchSnippets(1)" />
+        <div class="language-switcher">
+          <select v-model="locale">
+            <option value="zh">{{ t('common.chinese') }}</option>
+            <option value="en">{{ t('common.english') }}</option>
+          </select>
+        </div>
+        <button @click="showAdd = true" class="add-btn">{{ t('home.addSnippet') }}</button>
+        <input id="search" class="search-input" v-model="search" :placeholder="t('home.searchPlaceholder')" @input="() => fetchSnippets(1)" />
         <div class="user-bar">
           <span v-if="user.username">{{ user.username }}</span>
-          <button class="logout-btn" @click="logout">退出</button>
+          <button class="logout-btn" @click="logout">{{ t('common.logout') }}</button>
         </div>
       </div>
     </div>
@@ -16,26 +22,26 @@
     <div v-for="s in snippets" :key="s.id" class="snippet-item">
       <div class="snippet-title">{{ s.title }}</div>
       <MdPreview :id="id" :modelValue="s.content" />
-      <button @click="editSnippet(s)" class="edit-btn">编辑</button>
-      <button @click="deleteSnippet(s.id)" class="delete-btn">删除</button>
+      <button @click="editSnippet(s)" class="edit-btn">{{ t('common.edit') }}</button>
+      <button @click="deleteSnippet(s.id)" class="delete-btn">{{ t('common.delete') }}</button>
     </div>
     <div v-if="showAdd" class="modal-overlay">
       <div class="add-modal">
-        <h3>{{ currentSnippet.id ? '修改代码片段' : '新建代码片段' }}</h3>
-        <input v-model="addForm.title" placeholder="标题" maxlength="60" />
-        <MdEditor v-model="addForm.content" placeholder="代码内容" />
+        <h3>{{ currentSnippet.id ? t('home.editSnippet') : t('home.newSnippet') }}</h3>
+        <input v-model="addForm.title" :placeholder="t('home.titlePlaceholder')" maxlength="60" />
+        <MdEditor v-model="addForm.content" :placeholder="t('home.contentPlaceholder')" />
         <div class="btn-group">
           <button class="edit-btn" @click="currentSnippet.id ? saveEdit() : addSnippet()">
-            {{ currentSnippet.id ? '保存修改' : '添加' }}
+            {{ currentSnippet.id ? t('home.saveEdit') : t('home.add') }}
           </button>
-          <button class="cancel-btn" @click="close">取消</button>
+          <button class="cancel-btn" @click="close">{{ t('common.cancel') }}</button>
         </div>
       </div>
     </div>
     <div v-if="totalPages > 1" class="pagination">
-      <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">上一页</button>
-      <span>第 {{ currentPage }} 页 / 共 {{ totalPages }} 页</span>
-      <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">下一页</button>
+      <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">{{ t('common.prev') }}</button>
+      <span>{{ t('home.page', { current: currentPage, total: totalPages }) }}</span>
+      <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">{{ t('common.next') }}</button>
     </div>
   </div>
 </template>
@@ -43,6 +49,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { MdEditor,MdPreview, MdCatalog } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 // preview.css相比style.css少了编辑器那部分样式
@@ -50,6 +57,7 @@ import 'md-editor-v3/lib/preview.css';
 const id = 'preview-only';
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const user = ref<{ username?: string, email?: string }>({})
 
 const snippets = ref<any[]>([])
@@ -138,7 +146,7 @@ onMounted(() => {
 })
 
 const deleteSnippet = async (id: number) => {
-  if (confirm('确定要删除这个代码片段吗？')) {
+  if (confirm(t('home.deleteConfirm'))) {
     try {
       const token = localStorage.getItem('token')
       if (!token) {
@@ -215,7 +223,7 @@ const saveEdit = async () => {
 }
 
 const tokenExpired = ()=>{
-  alert('登录已过期，请重新登录');
+  alert(t('home.tokenExpired'));
   logout();
 }
 
@@ -262,6 +270,25 @@ button { margin-right: 8px; }
   align-items: center;
   width: 80%;
 }
+
+.language-switcher {
+  margin-right: 10px;
+}
+
+.language-switcher select {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+
+.language-switcher select:focus {
+  border-color: #18c37d;
+}
+
 .search-input{
   padding: 8px;
   max-width: 406px;

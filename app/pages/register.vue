@@ -1,32 +1,40 @@
 <template>
   <div class="register-container">
-    <h2>用户注册</h2>
+    <div class="language-switcher">
+      <select v-model="locale">
+        <option value="zh">{{ t('common.chinese') }}</option>
+        <option value="en">{{ t('common.english') }}</option>
+      </select>
+    </div>
+    <h2>{{ t('register.title') }}</h2>
     <form @submit.prevent="onRegister">
       <div class="input-group">
-        <input v-model="username" placeholder="请输入用户名" required />
+        <input v-model="username" :placeholder="t('register.usernamePlaceholder')" required />
       </div>
       <div class="input-group">
-        <input v-model="email" type="email" placeholder="请输入邮箱" required />
+        <input v-model="email" type="email" :placeholder="t('register.emailPlaceholder')" required />
       </div>
       <div class="input-group">
-        <input v-model="password" type="password" placeholder="请输入密码" required />
+        <input v-model="password" type="password" :placeholder="t('register.passwordPlaceholder')" required />
       </div>
-      <button type="submit">注册</button>
+      <button type="submit">{{ t('register.registerButton') }}</button>
       <div v-if="error" class="error">{{ error }}</div>
       <div v-if="success" class="success">{{ success }}</div>
     </form>
-    <div class="to-login">已有账号？<NuxtLink to="/login">去登录</NuxtLink></div>
+    <div class="to-login">{{ t('register.hasAccount') }}<NuxtLink to="/login">{{ t('register.goLogin') }}</NuxtLink></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const username = ref('')
 const email = ref('')
 const password = ref('')
 const error = ref('')
 const success = ref('')
+const { t, locale } = useI18n()
 
 const onRegister = async () => {
   error.value = ''
@@ -35,17 +43,28 @@ const onRegister = async () => {
     const res = await $fetch('/api/user/register', {
       method: 'POST',
       body: { username: username.value, email: email.value, password: password.value }
-    }) as { success: boolean; message?: string }
+    }) as { success: boolean; message?: string; code?: string }
     if (res.success) {
-      success.value = '注册成功，请前往登录！'
+      success.value = t('register.registerSuccess')
       username.value = ''
       email.value = ''
       password.value = ''
     } else {
-      error.value = res.message || '注册失败'
+      // 根据错误代码返回对应的国际化文本
+      if (res.code === 'USER_EXISTS') {
+        error.value = t('register.userExist')
+      } else if (res.code === 'INCOMPLETE_INFO') {
+        error.value = t('register.fillAllFields')
+      } else if (res.code === 'SERVER_ERROR') {
+        error.value = t('register.serverError')
+      } else if (res.code === 'REGISTER_FAILED') {
+        error.value = t('register.registerFailed')
+      } else {
+        error.value = t('register.registerFailed')
+      }
     }
   } catch (e) {
-    error.value = '注册失败，服务器错误'
+    error.value = t('register.serverError')
   }
 }
 </script>
@@ -58,6 +77,27 @@ const onRegister = async () => {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.language-switcher {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.language-switcher select {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+
+.language-switcher select:focus {
+  border-color: #18c37d;
 }
 
 h2 {

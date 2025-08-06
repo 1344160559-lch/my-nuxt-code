@@ -6,7 +6,11 @@ export default defineEventHandler(async (event) => {
   const { username, email, password } = body
 
   if (!username || !email || !password) {
-    return { success: false, message: '请填写完整信息' }
+    return { 
+      success: false, 
+      message: '请填写完整信息',
+      code: 'INCOMPLETE_INFO'
+    }
   }
 
   // 检查用户名或邮箱是否已存在
@@ -17,12 +21,20 @@ export default defineEventHandler(async (event) => {
   
   // 确保结果不为undefined
   if (!result) {
-    return { success: false, message: '服务器错误，请稍后再试' }
+    return { 
+      success: false, 
+      message: '服务器错误，请稍后再试',
+      code: 'SERVER_ERROR'
+    }
   }
   
   const [users] = result
   if (Array.isArray(users) && users.length > 0) {
-    return { success: false, message: '用户名或邮箱已存在' }
+    return { 
+      success: false, 
+      message: '用户名或邮箱已存在',
+      code: 'USER_EXISTS'
+    }
   }
 
   // 加密密码
@@ -36,8 +48,12 @@ export default defineEventHandler(async (event) => {
   
   // 确保结果不为undefined
   if (!insertResult) {
-    return { success: false, message: '注册失败，请稍后再试' }
+    return { 
+      success: false, 
+      message: '注册失败，请稍后再试',
+      code: 'REGISTER_FAILED'
+    }
   }
 
   return { success: true }
-}) 
+})
