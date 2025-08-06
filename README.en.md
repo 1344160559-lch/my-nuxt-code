@@ -27,6 +27,10 @@ This is a code snippet management system built with Nuxt 4.0, supporting user re
 - MySQL >= 5.7
 - npm >= 7.0.0 or pnpm >= 10.0.0
 
+![alt text](image-2.png)
+![alt text](image.png)
+![alt text](image-1.png)
+
 ## Installation Steps
 
 ### 1. Clone the repository
@@ -48,7 +52,7 @@ Or using pnpm:
 pnpm install
 ```
 
-### 3. Configure environment variables
+### 3. Configure environment variables（Only for the development environment）
 
 Create a `.env` file and add the following configuration:
 
@@ -119,20 +123,14 @@ pnpm build
 ### 2. Start production server
 
 ```bash
-npm run start
+node .output/server/index.mjs
 ```
 
 Or
 
 ```bash
-pnpm start
-```
-
-### Deploy with PM2
-
-```bash
-npm install -g pm2
-pm2 start npm --name "my-code-nuxt" -- start
+Run with the specified port number
+PORT=50001 .output/server/index.mjs
 ```
 
 ## Internationalization Feature

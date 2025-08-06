@@ -27,6 +27,10 @@
 - MySQL >= 5.7
 - npm >= 7.0.0 或 pnpm >= 10.0.0
 
+![alt text](image-2.png)
+![alt text](image.png)
+![alt text](image-1.png)
+
 ## 安装步骤
 
 ### 1. 克隆仓库
@@ -48,7 +52,7 @@ npm install
 pnpm install
 ```
 
-### 3. 配置环境变量
+### 3. 配置环境变量（仅限开发环境）
 
 创建 `.env` 文件并添加以下配置:
 
@@ -119,20 +123,14 @@ pnpm build
 ### 2. 启动生产服务器
 
 ```bash
-npm run start
+node .output/server/index.mjs
 ```
 
 或
 
 ```bash
-pnpm start
-```
-
-### 使用 PM2 部署
-
-```bash
-npm install -g pm2
-pm2 start npm --name "my-code-nuxt" -- start
+指定端口号运行
+PORT=50001 .output/server/index.mjs
 ```
 
 ## 国际化功能
